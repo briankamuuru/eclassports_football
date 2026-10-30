@@ -1,0 +1,6 @@
+{
+  "name": "eClassports Football",
+  "description": "Football prediction platform featuring Free Tips, VIP subsections, and settled tips history with accumulated odds summaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
