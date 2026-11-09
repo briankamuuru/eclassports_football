@@ -1,21 +1,33 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# R8 and ProGuard Optimization Rules for Google Play DEX Code Quality (>25% score)
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve line numbers and attributes for debugging and stack traces
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Firebase Firestore deserialization
+-keepclassmembers class com.example.data.** {
+    <fields>;
+    <init>(...);
+}
+-keepclassmembers class com.example.userapp.data.model.** {
+    <fields>;
+    <init>(...);
+}
+-keepclassmembers class com.eclassports.football.model.** {
+    <fields>;
+    <init>(...);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Subscription Models
+-keepclassmembers class com.example.billing.** {
+    <fields>;
+    <init>(...);
+}
+
+# RevenueCat Purchases SDK
+-keep class com.revenuecat.purchases.** { *; }
+-dontwarn com.revenuecat.purchases.**
+
+# Retrofit & OkHttp
+-dontwarn javax.annotation.**
+-dontwarn java.lang.invoke.**
+

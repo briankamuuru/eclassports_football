@@ -19,10 +19,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,15 +43,10 @@ import com.example.ui.theme.PinkDrawerFill
 
 /**
  * History VIP Screen.
- * Contains four independent category drawers arranged in two columns:
- * Row 1: Left: 2+ Tips VIP | Right: 3+ Tips VIP
- * Row 2: Left: 5+ Tips VIP | Right: Special VIP
- *
- * Each drawer has:
- * - Outline: Black (1.5.dp)
- * - Fill colour: Pink
- * - Text: Black or dark readable
- * - Icons: Small, simple, clear
+ * Contains independent category drawers arranged in two columns:
+ * Row 1: Left: All VIP Tips | Right: 2+ Tips VIP
+ * Row 2: Left: 3+ Tips VIP  | Right: 5+ Tips VIP
+ * Row 3: Left: Special VIP  | Right: Empty space
  */
 @Composable
 fun HistoryVipScreen(
@@ -119,22 +115,39 @@ fun HistoryVipScreen(
             modifier = Modifier.padding(bottom = 10.dp)
         )
 
-        // Four independent category drawers arranged in two columns
-        // Row 1: Left: 2+ Tips VIP | Right: 3+ Tips VIP
+        // Row 1: Left: All VIP Tips | Right: 2+ Tips VIP
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             GridDrawerCard(
+                title = LanguageManager.getString("all_vip_tips", language),
+                subtitle = LanguageManager.getString("all_vip_history_subtitle", language),
+                icon = Icons.Default.Layers,
+                badgeCount = historyCounts[TipCategory.ALL_VIP.id],
+                onClick = { onSelectHistoryCategory(TipCategory.ALL_VIP) },
+                modifier = Modifier.weight(1f),
+                testTag = "drawer_history_cat_vip_all"
+            )
+
+            GridDrawerCard(
                 title = LanguageManager.getString("vip_2_plus", language),
                 subtitle = "Settled 2.00+ matches",
-                icon = Icons.Default.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
                 badgeCount = historyCounts[TipCategory.VIP_2_PLUS.id],
                 onClick = { onSelectHistoryCategory(TipCategory.VIP_2_PLUS) },
                 modifier = Modifier.weight(1f),
                 testTag = "drawer_history_cat_vip_2_plus"
             )
+        }
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Row 2: Left: 3+ Tips VIP | Right: 5+ Tips VIP
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             GridDrawerCard(
                 title = LanguageManager.getString("vip_3_plus", language),
                 subtitle = "Settled 3.00+ matches",
@@ -144,15 +157,7 @@ fun HistoryVipScreen(
                 modifier = Modifier.weight(1f),
                 testTag = "drawer_history_cat_vip_3_plus"
             )
-        }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Row 2: Left: 5+ Tips VIP | Right: Special VIP
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
             GridDrawerCard(
                 title = LanguageManager.getString("vip_5_plus", language),
                 subtitle = "Settled 5.00+ matches",
@@ -162,7 +167,15 @@ fun HistoryVipScreen(
                 modifier = Modifier.weight(1f),
                 testTag = "drawer_history_cat_vip_5_plus"
             )
+        }
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Row 3: Left: Special VIP | Right: Empty space
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             GridDrawerCard(
                 title = LanguageManager.getString("vip_special", language),
                 subtitle = "Settled special picks",
@@ -172,6 +185,8 @@ fun HistoryVipScreen(
                 modifier = Modifier.weight(1f),
                 testTag = "drawer_history_cat_vip_special"
             )
+
+            Spacer(modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(24.dp))

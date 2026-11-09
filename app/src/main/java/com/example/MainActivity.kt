@@ -1,10 +1,18 @@
 package com.example
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +46,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,9 +58,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.billing.SubscriptionManager
+import com.example.billing.VipSection
 import com.example.data.TipCategory
 import com.example.ui.MainSection
 import com.example.ui.MainViewModel
+import com.example.ui.dialogs.VipPaywallDialog
+import com.example.ui.dialogs.VipSectionSubscriptionDialog
+import com.example.ui.theme.DateHeadingGolden
+import com.example.ui.components.SocialFloatingActionButtons
 import com.example.ui.locale.AppLanguage
 import com.example.ui.locale.LanguageManager
 import com.example.ui.screens.FreeTipsScreen
@@ -69,6 +86,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.example.util.NotificationHelper.createNotificationChannel(this)
         setContent {
             MyApplicationTheme {
                 MainAppShell()
@@ -80,25 +98,46 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppShell(viewModel: MainViewModel = viewModel()) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        android.util.Log.i("MainActivity", "Notification permission granted: $isGranted")
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     val currentSection by viewModel.currentSection.collectAsState()
     val currentVipCategory by viewModel.currentVipCategory.collectAsState()
     val isHistoryVipOpen by viewModel.isHistoryVipOpen.collectAsState()
     val currentHistoryCategory by viewModel.currentHistoryCategory.collectAsState()
     val language by viewModel.currentLanguage.collectAsState()
 
+    val subState by SubscriptionManager.subscriptionState.collectAsState()
+    var showPaywallDialog by remember { mutableStateOf(false) }
+
     // Tip lists
     val freeTips by viewModel.freeTips.collectAsState()
+    val allVipActive by viewModel.allVipActive.collectAsState()
     val vip2PlusActive by viewModel.vip2PlusActive.collectAsState()
     val vip3PlusActive by viewModel.vip3PlusActive.collectAsState()
     val vip5PlusActive by viewModel.vip5PlusActive.collectAsState()
     val vipSpecialActive by viewModel.vipSpecialActive.collectAsState()
 
+    val allVipHistory by viewModel.allVipHistory.collectAsState()
     val vip2PlusHistory by viewModel.vip2PlusHistory.collectAsState()
     val vip3PlusHistory by viewModel.vip3PlusHistory.collectAsState()
     val vip5PlusHistory by viewModel.vip5PlusHistory.collectAsState()
     val vipSpecialHistory by viewModel.vipSpecialHistory.collectAsState()
 
     val activeCounts = mapOf(
+        TipCategory.ALL_VIP.id to allVipActive.size,
         TipCategory.VIP_2_PLUS.id to vip2PlusActive.size,
         TipCategory.VIP_3_PLUS.id to vip3PlusActive.size,
         TipCategory.VIP_5_PLUS.id to vip5PlusActive.size,
@@ -106,6 +145,7 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
     )
 
     val historyCounts = mapOf(
+        TipCategory.ALL_VIP.id to allVipHistory.size,
         TipCategory.VIP_2_PLUS.id to vip2PlusHistory.size,
         TipCategory.VIP_3_PLUS.id to vip3PlusHistory.size,
         TipCategory.VIP_5_PLUS.id to vip5PlusHistory.size,
@@ -131,11 +171,12 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.SportsSoccer,
-                                contentDescription = null,
-                                tint = DarkText,
-                                modifier = Modifier.size(24.dp)
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = "eClassports Football Logo",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -147,6 +188,36 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                         }
                     },
                     actions = {
+                        // VIP status / Upgrade pill
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 6.dp)
+                                .background(
+                                    if (subState.isVip) DateHeadingGolden.copy(alpha = 0.25f) else PinkDrawerFill,
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .border(1.2.dp, BlackOutline, RoundedCornerShape(6.dp))
+                                .clickable { showPaywallDialog = true }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .testTag("topbar_vip_pill")
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.WorkspacePremium,
+                                    contentDescription = null,
+                                    tint = BlackOutline,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (subState.isVip) "VIP" else "UPGRADE",
+                                    color = DarkText,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
+
                         // Language pill button
                         Box(
                             modifier = Modifier
@@ -223,6 +294,7 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                 currentHistoryCategory != null -> {
                     val category = currentHistoryCategory!!
                     val historyTips = when (category) {
+                        TipCategory.ALL_VIP -> allVipHistory
                         TipCategory.VIP_2_PLUS -> vip2PlusHistory
                         TipCategory.VIP_3_PLUS -> vip3PlusHistory
                         TipCategory.VIP_5_PLUS -> vip5PlusHistory
@@ -233,9 +305,7 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                         category = category,
                         tips = historyTips,
                         language = language,
-                        onBack = { viewModel.navigateBack() },
-                        onSettleTip = { id, status -> viewModel.settleTip(id, status) },
-                        onDeleteTip = { tip -> viewModel.deleteTip(tip) }
+                        onBack = { viewModel.navigateBack() }
                     )
                 }
 
@@ -249,42 +319,54 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                     )
                 }
 
-                // 3. Active VIP Subsection Screen
+                // 3. Active VIP Subsection Screen (Guarded by section entitlement)
                 currentVipCategory != null -> {
                     val category = currentVipCategory!!
-                    val activeTips = when (category) {
-                        TipCategory.VIP_2_PLUS -> vip2PlusActive
-                        TipCategory.VIP_3_PLUS -> vip3PlusActive
-                        TipCategory.VIP_5_PLUS -> vip5PlusActive
-                        TipCategory.VIP_SPECIAL -> vipSpecialActive
-                        TipCategory.FREE -> emptyList()
+                    val vipSection = VipSection.fromTipCategory(category)
+                    val isUnlocked = vipSection == null || SubscriptionManager.isSectionUnlocked(vipSection)
+
+                    LaunchedEffect(category) {
+                        SubscriptionManager.refreshCustomerInfo()
                     }
-                    VipActiveSubsectionScreen(
-                        category = category,
-                        tips = activeTips,
-                        language = language,
-                        onBack = { viewModel.navigateBack() },
-                        onSettleTip = { id, status -> viewModel.settleTip(id, status) },
-                        onDeleteTip = { tip -> viewModel.deleteTip(tip) },
-                        onAddTip = { tip -> viewModel.addTip(tip) }
-                    )
+
+                    if (!isUnlocked && vipSection != null) {
+                        VipSectionSubscriptionDialog(
+                            section = vipSection,
+                            language = language,
+                            onDismiss = { viewModel.navigateBack() },
+                            onSubscriptionSuccess = {
+                                // Section unlocked
+                            }
+                        )
+                    } else {
+                        val activeTips = when (category) {
+                            TipCategory.ALL_VIP -> allVipActive
+                            TipCategory.VIP_2_PLUS -> vip2PlusActive
+                            TipCategory.VIP_3_PLUS -> vip3PlusActive
+                            TipCategory.VIP_5_PLUS -> vip5PlusActive
+                            TipCategory.VIP_SPECIAL -> vipSpecialActive
+                            TipCategory.FREE -> emptyList()
+                        }
+                        VipActiveSubsectionScreen(
+                            category = category,
+                            tips = activeTips,
+                            language = language,
+                            onBack = { viewModel.navigateBack() }
+                        )
+                    }
                 }
 
                 // 4. Main Section screens
                 currentSection == MainSection.FREE_TIPS -> {
                     FreeTipsScreen(
                         tips = freeTips,
-                        language = language,
-                        onSettleTip = { id, status -> viewModel.settleTip(id, status) },
-                        onDeleteTip = { tip -> viewModel.deleteTip(tip) },
-                        onAddTip = { tip -> viewModel.addTip(tip) }
+                        language = language
                     )
                 }
 
                 currentSection == MainSection.VIP_TIPS -> {
                     VipTipsScreen(
                         language = language,
-                        activeCounts = activeCounts,
                         onSelectVipCategory = { cat -> viewModel.selectVipCategory(cat) },
                         onOpenHistoryVip = { viewModel.openHistoryVip() }
                     )
@@ -294,11 +376,23 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                     SettingsScreen(
                         currentLanguage = language,
                         onLanguageChange = { lang -> viewModel.setLanguage(lang) },
-                        onResetData = { viewModel.resetDemoData() },
-                        onAddTip = { tip -> viewModel.addTip(tip) }
+                        onRefreshData = { viewModel.refreshFirestoreTips() }
                     )
                 }
             }
+
+            // VIP Paywall Dialog (Google Play Billing & RevenueCat)
+            if (showPaywallDialog) {
+                VipSectionSubscriptionDialog(
+                    section = VipSection.ALL_VIPS,
+                    language = language,
+                    onDismiss = { showPaywallDialog = false },
+                    onSubscriptionSuccess = { showPaywallDialog = false }
+                )
+            }
+
+            // Floating WhatsApp (bottom-right) and Telegram (bottom-left) contact icons
+            SocialFloatingActionButtons()
         }
     }
 }

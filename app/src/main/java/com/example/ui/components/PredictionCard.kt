@@ -1,8 +1,10 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,21 +36,21 @@ import com.example.ui.theme.LeagueHeadingBrightGreen
 import com.example.ui.theme.OddsLostRed
 import com.example.ui.theme.OddsPendingColor
 import com.example.ui.theme.OddsWonGreen
+import com.example.ui.theme.PinkDrawerFillLight
 import java.util.Locale
 
 /**
- * Football Prediction Card.
- * Complies with all visual rules:
+ * Football Prediction Card (Read-only client view).
  * - League heading: Bright green
  * - Team names & prediction text: Black / dark text
  * - Odds: Normal dark text when pending, green when won, red when lost
- * - Checkbox: Unticked when pending, ticked when won or lost
+ * - Checkbox indicator: Unticked when pending, ticked when won or lost
  * - NO WRITTEN Won, Lost, or Pending labels.
+ * - Non-editable / Read-only for standard users.
  */
 @Composable
 fun PredictionCard(
     tip: TipEntity,
-    onSettleClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isSettled = tip.status != TipStatus.PENDING.name
@@ -70,8 +72,7 @@ fun PredictionCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .testTag("prediction_card_${tip.id}")
-            .clickable(onClick = onSettleClick),
+            .testTag("prediction_card_${tip.id}"),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, GrayBorder),
@@ -83,10 +84,10 @@ fun PredictionCard(
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox for result state (unticked: pending, ticked: won/lost)
+            // Read-only indicator checkbox for result state (unticked: pending, ticked: won/lost)
             Checkbox(
                 checked = isChecked,
-                onCheckedChange = { onSettleClick() },
+                onCheckedChange = null,
                 modifier = Modifier
                     .size(24.dp)
                     .testTag("checkbox_tip_${tip.id}"),
@@ -111,17 +112,44 @@ fun PredictionCard(
                 ) {
                     Text(
                         text = tip.league,
-                        color = LeagueHeadingBrightGreen, // Bright green
+                        color = LeagueHeadingBrightGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                    Text(
-                        text = tip.kickoffTime,
-                        color = DarkText.copy(alpha = 0.7f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (tip.category != "free") {
+                            val badgeLabel = when (tip.category) {
+                                "vip_2_plus" -> "2+ VIP"
+                                "vip_3_plus" -> "3+ VIP"
+                                "vip_5_plus" -> "5+ VIP"
+                                "vip_special" -> "SPECIAL"
+                                else -> tip.categoryName.ifEmpty { "VIP" }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(PinkDrawerFillLight, RoundedCornerShape(3.dp))
+                                    .border(0.75.dp, BlackOutline, RoundedCornerShape(3.dp))
+                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = badgeLabel,
+                                    color = DarkText,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                        }
+                        Text(
+                            text = tip.kickoffTime,
+                            color = DarkText.copy(alpha = 0.7f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -150,7 +178,6 @@ fun PredictionCard(
             Spacer(modifier = Modifier.width(8.dp))
 
             // Odds value: Normal dark when pending, green when won, red when lost
-            // NO text label for Won/Lost/Pending!
             Text(
                 text = String.format(Locale.US, "%.2f", tip.odds),
                 color = oddsColor,

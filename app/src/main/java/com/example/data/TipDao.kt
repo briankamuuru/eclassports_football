@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -19,14 +20,23 @@ interface TipDao {
     @Query("SELECT * FROM tips WHERE category = :category")
     fun getAllTipsByCategory(category: String): Flow<List<TipEntity>>
 
+    @Query("SELECT * FROM tips WHERE category != 'free' AND status = 'PENDING'")
+    fun getAllActiveVipTips(): Flow<List<TipEntity>>
+
+    @Query("SELECT * FROM tips WHERE category != 'free' AND status != 'PENDING'")
+    fun getAllSettledVipTips(): Flow<List<TipEntity>>
+
+    @Query("SELECT * FROM tips WHERE category != 'free'")
+    fun getAllVipTips(): Flow<List<TipEntity>>
+
     @Query("SELECT * FROM tips WHERE id = :id")
-    suspend fun getTipById(id: Long): TipEntity?
+    suspend fun getTipById(id: String): TipEntity?
 
     @Query("SELECT COUNT(*) FROM tips")
     suspend fun getCount(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTip(tip: TipEntity): Long
+    suspend fun insertTip(tip: TipEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(tips: List<TipEntity>)
@@ -39,4 +49,12 @@ interface TipDao {
 
     @Query("DELETE FROM tips")
     suspend fun clearAll()
+
+    @Transaction
+    suspend fun replaceWithFirestoreTips(tips: List<TipEntity>) {
+        clearAll()
+        if (tips.isNotEmpty()) {
+            insertAll(tips)
+        }
+    }
 }

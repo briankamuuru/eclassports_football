@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "541146161238",
+    "project_id": "eclassports",
+    "storage_bucket": "eclassports.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541146161238:android:b6a5c9a05062ae0167dbf7",
+        "android_client_info": {
+          "package_name": "com.eclassports.football"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkw_VjAsvvLlHHjbJhdwaA8kepGtaS-8w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541146161238:android:fa102e1d7c1ef71f67dbf7",
+        "android_client_info": {
+          "package_name": "com.eclassports.football.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkw_VjAsvvLlHHjbJhdwaA8kepGtaS-8w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

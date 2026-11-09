@@ -22,10 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,10 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.example.data.DateGroupingHelper
 import com.example.data.TipCategory
 import com.example.data.TipEntity
-import com.example.data.TipStatus
 import com.example.ui.components.DailySummaryDrawer
 import com.example.ui.components.PredictionCard
-import com.example.ui.components.SettleTipDialog
 import com.example.ui.locale.AppLanguage
 import com.example.ui.locale.LanguageManager
 import com.example.ui.theme.BlackOutline
@@ -46,30 +41,16 @@ import com.example.ui.theme.DarkText
 import com.example.ui.theme.DateHeadingGolden
 import com.example.ui.theme.PinkDrawerFill
 
-/**
- * Screen displaying settled predictions for a specific VIP category.
- * Rules verified:
- * - Only settled predictions belonging to this category are displayed
- * - Chronological date sorting (earliest date first)
- * - Grouped by match date beneath single golden yellow date heading
- * - Predictions sorted by kickoff time
- * - Checkbox ticked, green odds (won) / red odds (lost)
- * - NO written result labels
- * - Independent Daily Summary Drawer at the end of each date group
- */
 @Composable
 fun HistoryCategoryDetailScreen(
     category: TipCategory,
     tips: List<TipEntity>,
     language: AppLanguage,
     onBack: () -> Unit,
-    onSettleTip: (Long, TipStatus) -> Unit,
-    onDeleteTip: (TipEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTipForSettle by remember { mutableStateOf<TipEntity?>(null) }
-
     val categoryTitleKey = when (category) {
+        TipCategory.ALL_VIP -> "all_vip_tips_history"
         TipCategory.VIP_2_PLUS -> "vip_2_plus_history"
         TipCategory.VIP_3_PLUS -> "vip_3_plus_history"
         TipCategory.VIP_5_PLUS -> "vip_5_plus_history"
@@ -90,7 +71,7 @@ fun HistoryCategoryDetailScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 40.dp),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Header Bar with Back Button & Pink Drawer Card Title
@@ -158,15 +139,35 @@ fun HistoryCategoryDetailScreen(
             dateGroups.forEach { dateGroup ->
                 // Date heading: Bright golden yellow, displayed ONCE per date group
                 item(key = "header_${dateGroup.dateIso}") {
-                    Text(
-                        text = dateGroup.formattedDate,
-                        color = DateHeadingGolden, // Bright golden yellow
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .padding(top = 10.dp, bottom = 4.dp, start = 2.dp)
                             .testTag("date_heading_${dateGroup.dateIso}")
-                    )
+                    ) {
+                        if (dateGroup.isToday) {
+                            Box(
+                                modifier = Modifier
+                                    .background(DateHeadingGolden, RoundedCornerShape(4.dp))
+                                    .border(1.dp, BlackOutline, RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "TODAY",
+                                    color = BlackOutline,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.size(6.dp))
+                        }
+                        Text(
+                            text = dateGroup.formattedDate,
+                            color = DateHeadingGolden,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 // Predictions belonging to that date
@@ -174,10 +175,7 @@ fun HistoryCategoryDetailScreen(
                     items = dateGroup.tips,
                     key = { it.id }
                 ) { tip ->
-                    PredictionCard(
-                        tip = tip,
-                        onSettleClick = { selectedTipForSettle = tip }
-                    )
+                    PredictionCard(tip = tip)
                 }
 
                 // Daily Summary Drawer: immediately after the last prediction of this date
@@ -192,21 +190,5 @@ fun HistoryCategoryDetailScreen(
                 }
             }
         }
-    }
-
-    selectedTipForSettle?.let { tip ->
-        SettleTipDialog(
-            tip = tip,
-            language = language,
-            onSettle = { status ->
-                onSettleTip(tip.id, status)
-                selectedTipForSettle = null
-            },
-            onDelete = {
-                onDeleteTip(tip)
-                selectedTipForSettle = null
-            },
-            onDismiss = { selectedTipForSettle = null }
-        )
     }
 }

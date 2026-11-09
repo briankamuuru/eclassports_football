@@ -46,6 +46,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val freeTips: StateFlow<List<TipEntity>> = repository.getAllTipsByCategory(TipCategory.FREE)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val allVipActive: StateFlow<List<TipEntity>> = repository.getActiveTips(TipCategory.ALL_VIP)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val vip2PlusActive: StateFlow<List<TipEntity>> = repository.getActiveTips(TipCategory.VIP_2_PLUS)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -58,7 +61,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val vipSpecialActive: StateFlow<List<TipEntity>> = repository.getActiveTips(TipCategory.VIP_SPECIAL)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Settled History tip lists (strictly independent)
+    // Settled History tip lists
+    val allVipHistory: StateFlow<List<TipEntity>> = repository.getSettledTips(TipCategory.ALL_VIP)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val vip2PlusHistory: StateFlow<List<TipEntity>> = repository.getSettledTips(TipCategory.VIP_2_PLUS)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -120,27 +126,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentLanguage.value = language
     }
 
-    fun settleTip(tipId: Long, status: TipStatus) {
+    fun refreshFirestoreTips() {
         viewModelScope.launch {
-            repository.settleTip(tipId, status)
-        }
-    }
-
-    fun addTip(tip: TipEntity) {
-        viewModelScope.launch {
-            repository.addTip(tip)
-        }
-    }
-
-    fun deleteTip(tip: TipEntity) {
-        viewModelScope.launch {
-            repository.deleteTip(tip)
-        }
-    }
-
-    fun resetDemoData() {
-        viewModelScope.launch {
-            repository.resetDefaults()
+            repository.refreshFromFirestore()
         }
     }
 }
