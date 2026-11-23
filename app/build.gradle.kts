@@ -16,7 +16,7 @@ android {
     applicationId = "com.eclassports.football"
     minSdk = 24
     targetSdk = 36
-    versionCode = 4
+    versionCode = 9
     versionName = "1.2.1"
     multiDexEnabled = true
 
@@ -34,7 +34,7 @@ android {
       keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
+      storeFile = file("${rootDir}/debug.keystore").let { if (it.exists()) it else signingConfigs.getByName("debug").storeFile }
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -44,7 +44,8 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.

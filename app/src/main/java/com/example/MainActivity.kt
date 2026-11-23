@@ -323,7 +323,7 @@ fun MainAppShell(viewModel: MainViewModel = viewModel()) {
                 currentVipCategory != null -> {
                     val category = currentVipCategory!!
                     val vipSection = VipSection.fromTipCategory(category)
-                    val isUnlocked = vipSection == null || SubscriptionManager.isSectionUnlocked(vipSection)
+                    val isUnlocked = vipSection == null || subState.isSectionUnlocked(vipSection)
 
                     LaunchedEffect(category) {
                         SubscriptionManager.refreshCustomerInfo()

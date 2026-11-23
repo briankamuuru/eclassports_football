@@ -65,7 +65,7 @@ fun VipTipsScreen(
     var activeDialogSection by remember { mutableStateOf<VipSection?>(null) }
 
     fun handleSectionClick(section: VipSection) {
-        if (SubscriptionManager.isSectionUnlocked(section)) {
+        if (subState.isSectionUnlocked(section)) {
             onSelectVipCategory(section.tipCategory)
         } else {
             activeDialogSection = section

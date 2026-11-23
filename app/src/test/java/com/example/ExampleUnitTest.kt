@@ -213,7 +213,7 @@ class ExampleUnitTest {
 
     @Test
     fun testSocialLinksUrls() {
-        assertEquals("https://wa.me/254742682130", com.example.ui.components.SocialLinksHelper.WHATSAPP_URL)
+        assertEquals("https://whatsapp.com/channel/0029VbEdDsjKbYMWrZLQa12K", com.example.ui.components.SocialLinksHelper.WHATSAPP_URL)
         assertEquals("https://t.me/clubfootbll", com.example.ui.components.SocialLinksHelper.TELEGRAM_URL)
     }
 

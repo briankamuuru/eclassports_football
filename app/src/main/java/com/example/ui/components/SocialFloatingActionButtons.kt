@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.R
 
 object SocialLinksHelper {
-    const val WHATSAPP_URL = "https://wa.me/254742682130"
+    const val WHATSAPP_URL = "https://whatsapp.com/channel/0029VbEdDsjKbYMWrZLQa12K"
     const val TELEGRAM_URL = "https://t.me/clubfootbll"
 
     fun openWhatsApp(context: Context) {
